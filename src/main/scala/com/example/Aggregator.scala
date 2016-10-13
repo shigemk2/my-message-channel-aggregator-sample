@@ -25,6 +25,13 @@ object AggregatorDriver extends CompletableApp(5) {
   val priceQuoteAggregator = system.actorOf(Props[PriceQuoteAggregator], "priceQuoteAggregator")
   val orderProcessor = system.actorOf(Props(classOf[MountaineeringSuppliesOrderProcessor], priceQuoteAggregator), "orderProcessor")
 
+  orderProcessor ! RequestForQuotation("123",
+    Vector(RetailItem("1", 29.95),
+      RetailItem("2", 99.95),
+      RetailItem("3", 14.95)))
+
+  awaitCompletion
+  println("Aggregator: is completed.")
 }
 
 class MountaineeringSuppliesOrderProcessor(priceQuoteAggregator: ActorRef) extends Actor {
@@ -95,3 +102,4 @@ class PriceQuoteAggregator extends Actor {
       println(s"PriceQuoteAggregator: received unexpected message: $message")
   }
 }
+

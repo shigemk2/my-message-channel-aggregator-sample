@@ -22,6 +22,9 @@ case class RequiredPriceQuotesForFulfillment(rfqId: String, quotesRequested: Int
 case class QuotationFulfillment(rfqId: String, quotesRequested: Int, priceQuotes: Seq[PriceQuote], requester: ActorRef)
 
 object AggregatorDriver extends CompletableApp(5) {
+  val priceQuoteAggregator = system.actorOf(Props[PriceQuoteAggregator], "priceQuoteAggregator")
+  val orderProcessor = system.actorOf(Props(classOf[MountaineeringSuppliesOrderProcessor], priceQuoteAggregator), "orderProcessor")
+
 }
 
 class MountaineeringSuppliesOrderProcessor(priceQuoteAggregator: ActorRef) extends Actor {

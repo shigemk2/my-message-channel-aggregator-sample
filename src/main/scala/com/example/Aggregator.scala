@@ -9,7 +9,7 @@ case class RequestForQuotation(rfqId: String, retailItems: Seq[RetailItem]) {
 
 case class RetailItem(itemId: String, retailPrice: Double)
 
-case class PriceQuoteInterest(quoteId: String, quoteProcessor: ActorRef, lowTotalRetail: Double, highTotalRetail: Double)
+case class PriceQuoteInterest(quoterId: String, quoteProcessor: ActorRef, lowTotalRetail: Double, highTotalRetail: Double)
 
 case class RequestPriceQuote(rfqId: String, itemId: String, retailPrice: Double, orderTotalRetailPrice: Double)
 
@@ -21,7 +21,44 @@ case class RequiredPriceQuotesForFulfillment(rfqId: String, quotesRequested: Int
 
 case class QuotationFulfillment(rfqId: String, quotesRequested: Int, priceQuotes: Seq[PriceQuote], requester: ActorRef)
 
-object AggregatorDriver {
-  def main(args: Array[String]): Unit = {
+object AggregatorDriver extends CompletableApp(5) {
+}
+
+class MountaineeringSuppliesOrderProcessor(priceQuoteAggregator: ActorRef) extends Actor {
+  val interestRegistry = scala.collection.mutable.Map[String, PriceQuoteInterest]()
+
+  def calculateRecipientList(rfq: RequestForQuotation): Iterable[ActorRef] = {
+    for {
+      interest <- interestRegistry.values
+      if (rfq.totalRetailPrice >= interest.lowTotalRetail)
+      if (rfq.totalRetailPrice <= interest.highTotalRetail)
+    } yield interest.quoteProcessor
+  }
+
+  def dispatchTo(rfq: RequestForQuotation, recipientList: Iterable[ActorRef]) = {
+    var totalRequestedQuotes = 0
+    recipientList.foreach { recipient =>
+      rfq.retailItems.foreach { retailItem =>
+        println("OrderProcessor: " + rfq.rfqId + " item: " + retailItem.itemId + " to: " + recipient.path.toString)
+        recipient ! RequestPriceQuote(rfq.rfqId, retailItem.itemId, retailItem.retailPrice, rfq.totalRetailPrice)
+      }
+    }
+  }
+
+  def receive = {
+    case interest: PriceQuoteInterest =>
+      interestRegistry(interest.quoterId) = interest
+    case priceQuote: PriceQuote =>
+      priceQuoteAggregator ! PriceQuoteFulfilled(priceQuote)
+      println(s"OrderProcessor: received: $priceQuote")
+    case rfq: RequestForQuotation =>
+      val recipientList = calculateRecipientList(rfq)
+      priceQuoteAggregator ! RequiredPriceQuotesForFulfillment(rfq.rfqId, recipientList.size * rfq.retailItems.size)
+      dispatchTo(rfq, recipientList)
+    case fulfillment: QuotationFulfillment =>
+      println(s"OrderProcessor: received: $fulfillment")
+      AggregatorDriver.completedStep()
+    case message: Any =>
+      println(s"OrderProcessor: received unexpected message: $message")
   }
 }

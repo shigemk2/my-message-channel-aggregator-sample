@@ -62,3 +62,33 @@ class MountaineeringSuppliesOrderProcessor(priceQuoteAggregator: ActorRef) exten
       println(s"OrderProcessor: received unexpected message: $message")
   }
 }
+
+class PriceQuoteAggregator extends Actor {
+  val fulfilledPriceQuotes = scala.collection.mutable.Map[String, QuotationFulfillment]()
+
+  def receive = {
+    case required: RequiredPriceQuotesForFulfillment =>
+      fulfilledPriceQuotes(required.rfqId) = QuotationFulfillment(required.rfqId, required.quotesRequested, Vector(), sender())
+    case priceQuoteFulFilled: PriceQuoteFulfilled =>
+      val previousFulfillment = fulfilledPriceQuotes(priceQuoteFulFilled.priceQuote.rfqId)
+      val currentPriceQuotes = previousFulfillment.priceQuotes :+ priceQuoteFulFilled.priceQuote
+      val currentFulfillment =
+        QuotationFulfillment(
+          previousFulfillment.rfqId,
+          previousFulfillment.quotesRequested,
+          currentPriceQuotes,
+          previousFulfillment.requester
+        )
+
+      if (currentPriceQuotes.size >= currentFulfillment.quotesRequested) {
+        currentFulfillment.requester ! currentFulfillment
+        fulfilledPriceQuotes.remove(priceQuoteFulFilled.priceQuote.rfqId)
+      } else {
+        fulfilledPriceQuotes(priceQuoteFulFilled.priceQuote.rfqId) = currentFulfillment
+      }
+
+      println(s"PriceQuoteAggregator: fulfilled price quote: $priceQuoteFulFilled")
+    case message: Any =>
+      println(s"PriceQuoteAggregator: received unexpected message: $message")
+  }
+}

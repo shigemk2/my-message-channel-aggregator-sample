@@ -26,6 +26,7 @@ object AggregatorDriver extends CompletableApp(5) {
   val orderProcessor = system.actorOf(Props(classOf[MountaineeringSuppliesOrderProcessor], priceQuoteAggregator), "orderProcessor")
 
   system.actorOf(Props(classOf[BudgetHikersPriceQuotes], orderProcessor), "budgetHikers")
+  system.actorOf(Props(classOf[HighSierraPriceQuotes], orderProcessor), "highSierra")
 
   orderProcessor ! RequestForQuotation("123",
     Vector(RetailItem("1", 29.95),

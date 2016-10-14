@@ -31,7 +31,7 @@ object AggregatorDriver extends CompletableApp(5) {
     Vector(RetailItem("1", 29.95),
       RetailItem("2", 99.95),
       RetailItem("3", 14.95)))
-  
+
   awaitCompletion
   println("Aggregator: is completed.")
 }
@@ -124,5 +124,27 @@ class BudgetHikersPriceQuotes(interestRegistrar: ActorRef) extends Actor {
     else if (orderTotalRetailPrice <= 499.99) 0.05
     else if (orderTotalRetailPrice <= 799.99) 0.07
     else 0.075
+  }
+}
+
+class HighSierraPriceQuotes(interestRegistrar: ActorRef) extends Actor {
+  val quoterId = self.path.toString.split("/").last
+  interestRegistrar ! PriceQuoteInterest(quoterId, self, 100.00, 10000.00)
+
+  def receive = {
+    case rpq: RequestPriceQuote =>
+      val discount = discountPercentage(rpq.orderTotalRetailPrice) * rpq.retailPrice
+      sender ! PriceQuote(quoterId, rpq.rfqId, rpq.itemId, rpq.retailPrice, rpq.retailPrice - discount)
+
+    case message: Any =>
+      println(s"HighSierraPriceQuotes: received unexpected message: $message")
+  }
+
+  def discountPercentage(orderTotalRetailPrice: Double): Double = {
+    if (orderTotalRetailPrice <= 150.00) 0.015
+    else if (orderTotalRetailPrice <= 499.99) 0.02
+    else if (orderTotalRetailPrice <= 999.99) 0.03
+    else if (orderTotalRetailPrice <= 4999.99) 0.04
+    else 0.05
   }
 }

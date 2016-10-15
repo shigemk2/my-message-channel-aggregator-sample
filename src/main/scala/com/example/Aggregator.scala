@@ -27,6 +27,7 @@ object AggregatorDriver extends CompletableApp(5) {
 
   system.actorOf(Props(classOf[BudgetHikersPriceQuotes], orderProcessor), "budgetHikers")
   system.actorOf(Props(classOf[HighSierraPriceQuotes], orderProcessor), "highSierra")
+  system.actorOf(Props(classOf[MountainAscentPriceQuotes], orderProcessor), "mountainAscent")
 
   orderProcessor ! RequestForQuotation("123",
     Vector(RetailItem("1", 29.95),

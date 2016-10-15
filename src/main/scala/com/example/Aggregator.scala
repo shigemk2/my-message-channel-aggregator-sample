@@ -36,6 +36,30 @@ object AggregatorDriver extends CompletableApp(5) {
       RetailItem("2", 99.95),
       RetailItem("3", 14.95)))
 
+  orderProcessor ! RequestForQuotation("125",
+    Vector(RetailItem("4", 39.99),
+      RetailItem("5", 199.95),
+      RetailItem("6", 149.95),
+      RetailItem("7", 724.99)))
+
+  orderProcessor ! RequestForQuotation("129",
+    Vector(RetailItem("8", 119.99),
+      RetailItem("9", 499.95),
+      RetailItem("10", 519.00),
+      RetailItem("11", 209.50)))
+
+  orderProcessor ! RequestForQuotation("135",
+    Vector(RetailItem("12", 0.97),
+      RetailItem("13", 9.50),
+      RetailItem("14", 1.99)))
+
+  orderProcessor ! RequestForQuotation("140",
+    Vector(RetailItem("15", 107.50),
+      RetailItem("16", 9.50),
+      RetailItem("17", 599.99),
+      RetailItem("18", 249.95),
+      RetailItem("19", 789.99)))
+
   awaitCompletion
   println("Aggregator: is completed.")
 }

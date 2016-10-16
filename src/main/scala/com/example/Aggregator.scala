@@ -31,10 +31,13 @@ object AggregatorDriver extends CompletableApp(1) {
   system.actorOf(Props(classOf[PinnacleGearPriceQuotes], orderProcessor), "pinnacleGear")
   system.actorOf(Props(classOf[RockBottomOuterwearPriceQuotes], orderProcessor), "rockBottomOuterwear")
 
+  // orderProcessor ! RequestForQuotation("123",
+  //     Vector(RetailItem("1", 29.95),
+  //            RetailItem("2", 99.95),
+  //            RetailItem("3", 14.95)))
+
   orderProcessor ! RequestForQuotation("123",
-      Vector(RetailItem("1", 29.95),
-             RetailItem("2", 99.95),
-             RetailItem("3", 14.95)))
+      Vector(RetailItem("1", 429.95)))
 
   awaitCompletion
   println("Aggregator: is completed.")
